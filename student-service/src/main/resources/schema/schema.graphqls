@@ -1,0 +1,15 @@
+type Mutation {
+  updateStudent(id: ID!, name: String, email: String): Student
+  addStudent(name: String!, email: String!): Student
+  deleteStudent(id: ID!): Boolean
+}
+
+type Query {
+  studentById(id: ID!): Student
+}
+
+type Student @key(fields: "id") {
+  id: ID!
+  name: String!
+  email: String!
+}

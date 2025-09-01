@@ -1,0 +1,31 @@
+# Mutation for Book
+type Mutation {
+  addBook(title: String!, author: String!, totalCopies: Int!): Book
+  updateBook(id: ID!, title: String!, author: String!, totalCopies: Int!): Book
+  deleteBook(id: ID!): Boolean
+}
+
+type Query {
+  allBooks: [Book]
+}
+
+# Book Type
+type Book {
+  id: ID!
+  title: String!
+  author: String!
+  totalCopies: Int!
+  availableCopies: Int!
+  borrowedBy: Student
+}
+
+# Stub definition to allow extension (required in DGS Federation)
+type Student @extends @key(fields: "id") {
+  id: ID! @external
+}
+
+# Extended fields for Student
+extend type Student {
+  borrowedBooksCount: Int
+}
+

@@ -1,0 +1,8 @@
+server:
+  port: 8081
+
+
+dgs:
+  graphql:
+    schema-locations:
+      - classpath*:schema/**/*.graphqls

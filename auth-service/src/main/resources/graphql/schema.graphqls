@@ -1,0 +1,13 @@
+type Query {
+  ping: String
+}
+
+type Mutation {
+  register(username: String!, password: String!): Boolean
+  login(username: String!, password: String!): AuthResponse
+}
+
+type AuthResponse {
+  token: String!
+  userId: ID!
+}
