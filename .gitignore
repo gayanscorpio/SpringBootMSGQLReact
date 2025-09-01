@@ -1,0 +1,13 @@
+# Java / Maven
+**/target/
+**/*.class
+*.log
+*.iml
+.settings/
+.idea/
+*.DS_Store
+
+# Node / React
+frontend/node_modules/
+frontend/build/
+
