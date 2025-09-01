@@ -1,6 +1,0 @@
-com/spring/student/aws/resolver/StudentResolver.class
-com/spring/student/aws/model/Book.class
-com/spring/student/aws/StudentServiceApplication.class
-com/spring/student/aws/model/Student.class
-com/spring/student/aws/security/SecurityConfig.class
-com/spring/student/aws/repository/StudentRepository.class
