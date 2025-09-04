@@ -6,8 +6,13 @@ type Mutation {
 
 type Query {
   studentById(id: ID!): Student
+  allStudents: [Student!]!
 }
 
+
+
+# Book service can extend Student to add federated fields, such as borrowedBooksCount.
+# @key annotation makes this entity resolvable across federated services (Apollo Federation / Netflix DGS).
 type Student @key(fields: "id") {
   id: ID!
   name: String!

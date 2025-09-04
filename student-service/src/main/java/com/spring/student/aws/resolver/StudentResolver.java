@@ -1,9 +1,12 @@
 package com.spring.student.aws.resolver;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.netflix.graphql.dgs.DgsComponent;
+import com.netflix.graphql.dgs.DgsData;
+import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
 import com.netflix.graphql.dgs.DgsEntityFetcher;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
@@ -51,13 +54,14 @@ public class StudentResolver {
 	}
 
 	@DgsQuery
+	public List<Student> allStudents() {
+		System.out.println("<<<<<<<<<<< allStudents >>>>>>>>>>");
+		return studentRepository.findAll();
+	}
+
+	@DgsQuery
 	public Student studentById(@InputArgument String id) {
 		return studentRepository.findById(id).orElse(null);
 	}
-
-	@DgsEntityFetcher(name = "Student")
-	public Student getStudent(Map<String, Object> values) {
-		String id = (String) values.get("id");
-		return studentRepository.findById(id).orElse(null);
-	}
+	
 }

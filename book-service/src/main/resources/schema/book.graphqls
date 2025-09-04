@@ -9,6 +9,11 @@ type Query {
   allBooks: [Book]
 }
 
+extend type Mutation {
+  borrowBook(bookId: ID!, studentId: ID!): Book
+  returnBook(bookId: ID!): Book
+}
+
 # Book Type
 type Book {
   id: ID!
@@ -19,13 +24,15 @@ type Book {
   borrowedBy: Student
 }
 
-# Stub definition to allow extension (required in DGS Federation)
-type Student @extends @key(fields: "id") {
-  id: ID! @external
+
+# Entity reference for Student (imported from Student service)
+# The id is the "federation key" that links the same Student across services.
+type Student @key(fields: "id") {
+  id: ID! # reference back to the owning service - Student
 }
 
 # Extended fields for Student
-extend type Student {
+extend type Student @key(fields: "id") {
   borrowedBooksCount: Int
 }
 
