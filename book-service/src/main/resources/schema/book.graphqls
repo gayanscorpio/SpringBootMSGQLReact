@@ -21,7 +21,7 @@ type Book {
   author: String!
   totalCopies: Int!
   availableCopies: Int!
-  borrowedBy: Student
+  borrowedBy: Student #Book.borrowedBy → refers to a Student., Student is a federated entity (stub with id only).
 }
 
 
@@ -33,6 +33,14 @@ type Student @key(fields: "id") {
 
 # Extended fields for Student
 extend type Student @key(fields: "id") {
-  borrowedBooksCount: Int
+  borrowedBooksCount: Int  #Extended field for Student, resolved by the Book service. Counts how many books the student borrowed.
 }
+
+extend type Student @key(fields: "id") {
+  borrowedBooks: [Book!]!  #borrowedBooks → resolved in Book service.
+}
+
+
+
+
 

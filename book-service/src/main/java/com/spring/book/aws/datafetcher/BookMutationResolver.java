@@ -59,8 +59,10 @@ public class BookMutationResolver {
 	}
 
 	/**
-	 * borrowedBy resolver returns a stub Student instance with just the ID—Apollo
-	 * Gateway handles fetching the rest.
+	 * For each book, GraphQL sees a request for borrowedBy →
+	 * calls @DgsData(parentType="Book", field="borrowedBy"). Important: This is not
+	 * the full Student yet. The Apollo Gateway knows that Student is a federated
+	 * entity, so it calls the Student service to fetch full name and email.
 	 * 
 	 * @param dfe
 	 * @return
@@ -70,10 +72,18 @@ public class BookMutationResolver {
 		Book book = dfe.getSource();
 		if (book.getBorrowedStudentId() == null)
 			return null;
-		// Stub Student entity with only ID
+		// return a Student stub (only id).
 		return new Student(book.getBorrowedStudentId());
 	}
 
+	/**
+	 * Resolves the borrowedBooksCount field for a Student. Counts how many books in
+	 * BookRepository have borrowedStudentId = student.id. 
+	 * extend type Student : "Student" is the GraphQL type
+	 * 
+	 * @param dfe
+	 * @return
+	 */
 	@DgsData(parentType = "Student", field = "borrowedBooksCount")
 	public Integer borrowedBooksCount(DgsDataFetchingEnvironment dfe) {
 		Student student = dfe.getSource(); // federated Student stub
@@ -104,10 +114,22 @@ public class BookMutationResolver {
 		return bookRepository.save(book);
 	}
 
+	/**
+	 * Entity Fetcher for Federation: This allows Book service to resolve a Student
+	 * entity using only the id. Apollo Gateway then queries Student service to get
+	 * full data (name, email).
+	 */
 	@DgsEntityFetcher(name = "Student")
 	public Student studentEntityFetcher(Map<String, Object> values) {
 		String id = (String) values.get("id");
 		return new Student(id); // just stub, gateway will call Student service for full data
 	}
+	
+	@DgsData(parentType = "Student", field = "borrowedBooks")
+	public List<Book> GetStudentWithBorrowedBooks(DgsDataFetchingEnvironment dfe) {
+		Student student = dfe.getSource(); //the Student entity (stub with id).
+		return bookRepository.findByBorrowedStudentId(student.getId());
+	}
+
 
 }

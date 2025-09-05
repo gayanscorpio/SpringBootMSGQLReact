@@ -63,5 +63,19 @@ public class StudentResolver {
 	public Student studentById(@InputArgument String id) {
 		return studentRepository.findById(id).orElse(null);
 	}
-	
+
+	/**
+	 * name = "Student" → must match the GraphQL type Student.
+	 * values.get("id") → comes from the Book service stub { id: "..." }.
+	 * Returns the full Student entity from DB.
+	 * 
+	 * @param values
+	 * @return
+	 */
+	@DgsEntityFetcher(name = "Student")
+	public Student studentEntityFetcher(Map<String, Object> values) {
+		String id = (String) values.get("id");
+		return studentRepository.findById(id).orElse(null);
+	}
+
 }
