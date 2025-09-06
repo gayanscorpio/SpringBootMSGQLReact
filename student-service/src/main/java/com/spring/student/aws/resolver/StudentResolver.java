@@ -42,8 +42,10 @@ public class StudentResolver {
 	@DgsMutation
 	public Student updateStudent(@InputArgument String id, @InputArgument String name, @InputArgument String email) {
 		Student student = studentRepository.findById(id).orElseThrow(() -> new RuntimeException("Student not found"));
-		student.setName(name);
-		student.setEmail(email);
+		if (name != null)
+			student.setName(name);
+		if (email != null)
+			student.setEmail(email);
 		return studentRepository.save(student);
 	}
 
@@ -65,9 +67,9 @@ public class StudentResolver {
 	}
 
 	/**
-	 * name = "Student" → must match the GraphQL type Student.
-	 * values.get("id") → comes from the Book service stub { id: "..." }.
-	 * Returns the full Student entity from DB.
+	 * name = "Student" → must match the GraphQL type Student. values.get("id") →
+	 * comes from the Book service stub { id: "..." }. Returns the full Student
+	 * entity from DB.
 	 * 
 	 * @param values
 	 * @return

@@ -11,7 +11,7 @@ type Query {
 
 extend type Mutation {
   borrowBook(bookId: ID!, studentId: ID!): Book
-  returnBook(bookId: ID!): Book
+  returnBook(bookId: ID!, studentId: ID!): Book
 }
 
 # Book Type
@@ -21,7 +21,7 @@ type Book {
   author: String!
   totalCopies: Int!
   availableCopies: Int!
-  borrowedBy: Student #Book.borrowedBy → refers to a Student., Student is a federated entity (stub with id only).
+  borrowedBy: [Student!]!   # List of students currently borrowing this book
 }
 
 
