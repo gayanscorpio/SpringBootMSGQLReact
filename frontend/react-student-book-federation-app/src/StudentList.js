@@ -100,6 +100,8 @@ function StudentList({ onEdit, onDelete }) {
         }
     };
 
+    const role = localStorage.getItem("role"); // ✅ check logged-in user role
+
     return (
         <div>
             <h2>Students List</h2>
@@ -132,8 +134,14 @@ function StudentList({ onEdit, onDelete }) {
                             )}</td>
 
                             <td>
-                                <button onClick={() => onEdit(student.id)}>Edit</button>
-                                <button onClick={() => onDelete(student.id)}>Delete</button>
+                                {/* ✅ Show Edit/Delete only if Admin */}
+                                {role === "Admin" && (
+                                    <>
+                                        <button onClick={() => onEdit(student.id)}>Edit</button>
+                                        <button onClick={() => onDelete(student.id)}>Delete</button>
+                                    </>
+                                )}
+                                {/* ✅ Borrow allowed for both Admin and Student */}
                                 <button onClick={() => setBorrowForStudentId(student.id)}>
                                     Borrow Book
                                 </button>

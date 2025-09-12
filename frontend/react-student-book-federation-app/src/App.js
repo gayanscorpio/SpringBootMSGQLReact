@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import StudentList from './StudentList';
 import AddStudent from './AddStudent';
@@ -12,11 +12,24 @@ import Login from './Login';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [role, setRole] = useState(localStorage.getItem('role')); // 👈 store role
 
-  console.log('<<<<<<<<< isLoggedIn:', isLoggedIn)
+  // Run once on mount to sync state with localStorage
+  useEffect(() => {
+    setRole(localStorage.getItem('role'));
+  }, []);
+
+  console.log('<<<<<<<<< isLoggedIn:', isLoggedIn, 'role:', role);
   // Page loads → Root renders <Login /> if no token.
   if (!isLoggedIn) {
-    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+    return (
+      <Login
+        onLoginSuccess={(userRole) => {
+          setIsLoggedIn(true);
+          setRole(userRole);
+        }}
+      />
+    );
   }
 
   return (
@@ -32,7 +45,9 @@ function App() {
             href="#"
             onClick={() => {
               localStorage.removeItem('token');
+              localStorage.removeItem('role');
               setIsLoggedIn(false);
+              setRole(null);
             }}
           >
             Logout
@@ -69,7 +84,8 @@ function App() {
             path="/books"
             element={
               <div>
-                <AddBook />
+                {/* 👇 Only Admin sees AddBook */}
+                {role === 'Admin' && <AddBook />}
                 <BookList />
               </div>
             }

@@ -7,7 +7,7 @@ const LOGIN_MUTATION = gql`
   mutation login($username: String!, $password: String!) {
     login(username: $username, password: $password) {
       token
-      userId
+      role
     }
   }
 `;
@@ -23,11 +23,17 @@ function Login({ onLoginSuccess }) {
         e.preventDefault();
         try {
             const { data } = await login({ variables: { username, password } });
-            localStorage.setItem('token', data.login.token); // store token
-            const userId = data.login.userId; // ✅ matches schema
-            console.log('User ID:', userId);
-            onLoginSuccess(); // notify parent that login succeeded
+
+            if (data?.login?.token) {
+                // Save token + role in localStorage
+                localStorage.setItem('token', data.login.token);
+                localStorage.setItem('role', data.login.role);
+
+                // Inform App.js of success + role
+                onLoginSuccess(data.login.role);
+            }
         } catch (err) {
+            console.error('Login failed:', err);
             console.error(err);
         }
     };
@@ -50,7 +56,9 @@ function Login({ onLoginSuccess }) {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
-                <button type="submit" disabled={loading}>Login</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Logging in...' : 'Login'}
+                </button>
             </form>
             {error && <p style={{ color: 'red' }}>Login failed</p>}
         </div>

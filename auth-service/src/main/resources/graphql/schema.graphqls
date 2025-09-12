@@ -10,4 +10,5 @@ type Mutation {
 type AuthResponse {
   token: String!
   userId: ID!
+  role: String!
 }

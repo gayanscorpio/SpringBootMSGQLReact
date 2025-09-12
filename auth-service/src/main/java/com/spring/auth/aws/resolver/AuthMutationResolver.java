@@ -51,6 +51,6 @@ public class AuthMutationResolver {
 		}
 
 		String token = jwtUtil.generateToken(user);
-		return new AuthResponse(token, user.getId());
+		return new AuthResponse(token, user.getId(), user.getRole());
 	}
 }

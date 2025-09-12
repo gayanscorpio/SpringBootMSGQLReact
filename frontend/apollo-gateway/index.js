@@ -3,15 +3,18 @@ const { ApolloGateway, IntrospectAndCompose, RemoteGraphQLDataSource } = require
 
 const SERVICE_JWT = process.env.SERVICE_JWT; // must be set before starting
 
-// Custom DataSource
+// Custom DataSource with Auth
 class AuthenticatedDataSource extends RemoteGraphQLDataSource {
   willSendRequest({ request, context }) {
-    const query = request.body.query || "";
+    const query = request.query || "";
 
-    if (query.includes("_service")) {
-      console.log("👉 Federation introspection detected. Setting SERVICE_JWT");
+    // ✅ Federation introspection (_service query)
+    if (query.includes("_service") && SERVICE_JWT) {
+      console.log("👉 Federation introspection detected, using SERVICE_JWT");
       request.http.headers.set("Authorization", `Bearer ${SERVICE_JWT}`);
-    } else if (context.token) {
+    }
+    // ✅ Forward user token
+    else if (context.token) {
       console.log("👉 Forwarding user token:", context.token);
       request.http.headers.set("Authorization", context.token);
     }
