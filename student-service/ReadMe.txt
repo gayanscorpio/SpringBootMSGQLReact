@@ -1,82 +1,72 @@
-query {
-  allStudents {
-    id
-    name
-    email
-  }
-}
+1️⃣ Add a Student (addStudent)
 
-curl -X POST http://localhost:4000/graphql \
+curl -i -X POST http://localhost:8080/graphql \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer $TOKEN" \
+-d '{"query":"mutation { addStudent(name: \"John Doe\", email: \"john@example.com\") { id name email } }"}'
+
+
+
+2️⃣ Update a Student (updateStudent)
+
+STUDENT_ID="replace_with_student_id"
+
+curl -i -X POST http://localhost:8080/graphql \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $TOKEN" \
+-d "{\"query\":\"mutation { updateStudent(id: \\\"$STUDENT_ID\\\", name: \\\"John Updated\\\", email: \\\"john.updated@example.com\\\") { id name email } }\"}"
+
+
+
+3️⃣ Delete a Student (deleteStudent)
+
+STUDENT_ID="replace_with_student_id"
+
+curl -i -X POST http://localhost:8080/graphql \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $TOKEN" \
+-d "{\"query\":\"mutation { deleteStudent(id: \\\"$STUDENT_ID\\\") }\"}"
+
+
+
+4️⃣ Query all Students (allStudents)
+
+curl -i -X POST http://localhost:8080/graphql \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $TOKEN" \
 -d '{"query":"query { allStudents { id name email } }"}'
 
---------------------------------------------------------
 
-query {
-  studentById(id: "STUDENT_ID_HERE") {
-    id
-    name
-    email
-  }
-}
 
-curl -X POST http://localhost:4000/graphql \
+5️⃣ Query a Student by ID (studentById)
+
+STUDENT_ID="replace_with_student_id"
+
+curl -i -X POST http://localhost:8080/graphql \
 -H "Content-Type: application/json" \
--d '{"query":"query { studentById(id: \"STUDENT_ID_HERE\") { id name email } }"}'
+-H "Authorization: Bearer $TOKEN" \
+-d "{\"query\":\"query { studentById(id: \\\"$STUDENT_ID\\\") { id name email } }\"}"
 
---------------------------------------------------------------------------------
 
-mutation {
-  addStudent(name: "John Doe", email: "john.doe@example.com") {
-    id
-    name
-    email
-  }
-}
 
-curl -X POST http://localhost:4000/graphql \
--H "Content-Type: application/json" \
--d '{"query":"mutation { addStudent(name: \"John Doe\", email: \"john.doe@example.com\") { id name email } }"}'
+6️⃣ Federation: Book service requesting Student entity
 
-----------------------------------------------------------------------------------------------------------------
+Book service resolves borrowedBy → sends _entities query automatically to Student service. For reference, 
+this is the automatic federated request Apollo Gateway triggers:
 
-mutation {
-  updateStudent(id: "STUDENT_ID_HERE", name: "Jane Doe", email: "jane.doe@example.com") {
-    id
-    name
-    email
+{
+  "query": "query($representations: [_Any!]!) { _entities(representations: $representations) { ... on Student { id name email } } }",
+  "variables": {
+    "representations": [{ "id": "student-id" }]
   }
 }
 
 
-curl -X POST http://localhost:4000/graphql \
+STUDENT_ID="replace_with_student_id"
+
+curl -i -X POST http://localhost:8080/graphql \
 -H "Content-Type: application/json" \
--d '{"query":"mutation { updateStudent(id: \"STUDENT_ID_HERE\", name: \"Jane Doe\", email: \"jane.doe@example.com\") { id name email } }"}'
-
--------------------------------------------------------------------------------------------------------------------------------------------
-
-mutation {
-  deleteStudent(id: "STUDENT_ID_HERE")
-}
-
-curl -X POST http://localhost:4000/graphql \
--H "Content-Type: application/json" \
--d '{"query":"mutation { deleteStudent(id: \"STUDENT_ID_HERE\") }"}'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+-H "Authorization: Bearer $TOKEN" \
+-d "{\"query\":\"query(\$representations: [_Any!]!) { _entities(representations: \$representations) { ... on Student { id name email } } }\",\"variables\":{\"representations\":[{\"id\":\"$STUDENT_ID\"}]}}"
 
 
