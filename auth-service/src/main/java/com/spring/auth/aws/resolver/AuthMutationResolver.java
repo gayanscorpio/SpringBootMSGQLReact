@@ -24,7 +24,7 @@ public class AuthMutationResolver {
 	private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
 	@MutationMapping
-	public Boolean register(@Argument String username, @Argument String password) {
+	public Boolean register(@Argument String username, @Argument String password, @Argument String role) {
 
 		System.out.println("<<<<<<<<<<<<<<<< user register calling ... <<<<<<<<<<<<");
 		if (userRepo.findByUsername(username).isPresent()) {
@@ -34,7 +34,7 @@ public class AuthMutationResolver {
 		AppUser user = new AppUser();
 		user.setUsername(username);
 		user.setPassword(encoder.encode(password));
-		user.setRole("Admin");
+		user.setRole(role != null ? role : "User");
 		userRepo.save(user);
 
 		System.out.println("<<<<<<<<<<<<<<<< user registered successfully <<<<<<<<<<<<");

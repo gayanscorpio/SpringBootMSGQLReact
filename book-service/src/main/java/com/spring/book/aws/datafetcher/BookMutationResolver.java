@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsData;
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
@@ -36,6 +38,7 @@ public class BookMutationResolver {
 	}
 
 	@DgsMutation
+	@PreAuthorize("hasRole('Admin')") // Only Admins can add books
 	public Book addBook(@InputArgument String title, @InputArgument String author, @InputArgument int totalCopies) {
 		Book book = new Book();
 		book.setId(UUID.randomUUID().toString());
@@ -48,6 +51,7 @@ public class BookMutationResolver {
 	}
 
 	@DgsMutation
+	@PreAuthorize("hasRole('Admin')") // Only Admins can update books
 	public Book updateBook(@InputArgument String id, @InputArgument String title, @InputArgument String author,
 			@InputArgument int totalCopies) {
 		Book book = bookRepository.findById(id).orElseThrow(() -> new RuntimeException("Book not found"));
@@ -66,12 +70,14 @@ public class BookMutationResolver {
 	}
 
 	@DgsMutation
+	@PreAuthorize("hasRole('Admin')") // Only Admins can delete books
 	public Boolean deleteBook(@InputArgument String id) {
 		bookRepository.deleteById(id);
 		return true;
 	}
 
 	@DgsQuery
+	@PreAuthorize("hasAnyRole('Admin', 'Student')") // allow both Admin and Student
 	public List<Book> allBooks() {
 		return bookRepository.findAll();
 	}
