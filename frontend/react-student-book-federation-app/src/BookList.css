@@ -1,0 +1,30 @@
+.book-list-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.book-list-table th,
+.book-list-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.book-list-table tr.available {
+    background-color: #e0f7fa;
+    /* light blue */
+}
+
+.book-list-table tr.borrowed-by-you {
+    background-color: #d0f0c0;
+    /* light green */
+}
+
+.book-list-table tr.borrowed-by-others {
+    background-color: #ffe0b2;
+    /* light orange */
+}
+
+.book-list-table th {
+    background-color: #f2f2f2;
+}

@@ -20,10 +20,27 @@ const authLink = setContext((_, { headers }) => {
     };
 });
 
-// Create Apollo Client
+// Create Apollo Client with custom cache policies
 const client = new ApolloClient({
     link: authLink.concat(httpLink), // chain auth link and http link
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+        typePolicies: {
+            Student: {
+                keyFields: ['id'], // normalize by ID
+            },
+            Book: {
+                keyFields: ['id'], // normalize by ID
+                fields: {
+                    borrowedBy: {
+                        // Merge function tells Apollo how to safely replace borrowedBy
+                        merge(existing, incoming) {
+                            return incoming; // Accept new value even if null
+                        },
+                    },
+                },
+            },
+        }
+    }),
 });
 
 export default client;

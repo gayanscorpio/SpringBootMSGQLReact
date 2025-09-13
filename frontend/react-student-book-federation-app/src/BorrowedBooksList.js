@@ -41,7 +41,6 @@ const RETURN_BOOK = gql`
 function BorrowedBooksList({ studentId }) {
   const { loading, error, data } = useQuery(GET_BORROWED_BOOKS, {
     variables: { id: studentId },
-    fetchPolicy: "network-only", // always fetch fresh data
   });
 
   const [returnBook] = useMutation(RETURN_BOOK, {
@@ -57,21 +56,28 @@ function BorrowedBooksList({ studentId }) {
               (bookRef) => readField("id", bookRef) !== returnBook.id
             );
           },
+          borrowedBooksCount(existingCount = 1) {
+            return Math.max(existingCount - 1, 0);
+          },
         },
       });
 
-      // Normalize the returned book's borrowedBy list into refs
-      cache.modify({
-        id: cache.identify({ __typename: "Book", id: returnBook.id }),
-        fields: {
-          availableCopies() {
-            return returnBook.availableCopies;
-          },
-          borrowedBy(_, { toReference }) {
-            return returnBook.borrowedBy.map((student) =>
-              toReference({ __typename: "Student", id: student.id })
-            );
-          },
+      // 2️⃣ Update Book object fields in cache safely
+      cache.writeFragment({
+        id: cache.identify({ __typename: 'Book', id: returnBook.id }),
+        fragment: gql`
+          fragment ReturnedBook on Book {
+            id
+            availableCopies
+            borrowedBy {
+              id
+              name
+            }
+          }
+        `,
+        data: {
+          ...returnBook,
+          borrowedBy: returnBook.borrowedBy || [], // prevent null
         },
       });
     },

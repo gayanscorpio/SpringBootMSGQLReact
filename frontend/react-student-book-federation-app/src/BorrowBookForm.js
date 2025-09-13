@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { gql, useQuery, useMutation } from "@apollo/client";
-import { GET_STUDENTS } from "./StudentList"; // ✅ must be named export
+import { GET_STUDENTS } from './StudentList'; // import your query for cache update
 
-// Query: fetch available books
+// Query to get student and their borrowed books
 export const GET_AVAILABLE_BOOKS = gql`
   query GetBooks {
     allBooks {
@@ -40,21 +40,24 @@ function BorrowBookForm({ studentId, onClose }) {
 
     const [borrowBook] = useMutation(BORROW_BOOK, {
         update(cache, { data: { borrowBook } }) {
+            if (!borrowBook) return;
+
             // ✅ Update Book in cache
             try {
                 cache.writeFragment({
                     id: `Book:${borrowBook.id}`,
                     fragment: gql`
-                    fragment BorrowedBook on Book {
-                              id
-                              title
-                              author
-                              availableCopies
-                              borrowedBy {
-                                 id
-                                 name
-                    }
-                  }`,
+            fragment BorrowedBook on Book {
+              id
+              title
+              author
+              availableCopies
+              borrowedBy {
+                id
+                name
+              }
+            }
+          `,
                     data: borrowBook,
                 });
             } catch (e) {
@@ -77,8 +80,35 @@ function BorrowBookForm({ studentId, onClose }) {
             } catch (e) {
                 console.warn("Student cache update skipped:", e);
             }
+
+            // 3️⃣ Update GET_STUDENTS so StudentList table refreshes instantly
+            try {
+                const existingData = cache.readQuery({ query: GET_STUDENTS });
+                if (existingData) {
+                    cache.writeQuery({
+                        query: GET_STUDENTS,
+                        data: {
+                            allStudents: existingData.allStudents.map((s) =>
+                                s.id === studentId
+                                    ? {
+                                        ...s,
+                                        borrowedBooksCount: (s.borrowedBooksCount || 0) + 1,
+                                        borrowedBooks: [
+                                            ...s.borrowedBooks,
+                                            { __typename: "Book", id: borrowBook.id, title: borrowBook.title, author: borrowBook.author, availableCopies: borrowBook.availableCopies, borrowedBy: borrowBook.borrowedBy }
+                                        ]
+                                    }
+                                    : s
+                            ),
+                        },
+                    });
+                }
+            } catch (e) {
+                console.warn("GET_STUDENTS cache update skipped:", e);
+            }
         }
     });
+
 
     if (loading) return <p>Loading books...</p>;
     if (error) return <p>Error: {error.message}</p>;
@@ -94,7 +124,7 @@ function BorrowBookForm({ studentId, onClose }) {
         }
     };
 
-    // ✅ Fix: handle borrowedBy as an array instead of a single student
+    // Filter available books
     const availableBooks = (data?.allBooks || []).filter(
         (book) =>
             book &&

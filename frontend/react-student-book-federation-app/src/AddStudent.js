@@ -1,6 +1,7 @@
 // src/AddStudent.js
 import React, { useState } from 'react';
 import { gql, useMutation } from '@apollo/client';
+import { GET_STUDENTS } from './StudentList'; // Import the query to update cache
 
 const ADD_STUDENT = gql`
   mutation AddStudent($name: String!, $email: String!) {
@@ -8,6 +9,13 @@ const ADD_STUDENT = gql`
       id
       name
       email
+      borrowedBooksCount
+      borrowedBooks {
+        id
+        title
+        author
+        availableCopies
+      }
     }
   }
 `;
@@ -15,11 +23,37 @@ const ADD_STUDENT = gql`
 function AddStudent() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [addStudent, { data, loading, error }] = useMutation(ADD_STUDENT);
+
+    const [addStudent, { data, loading, error }] = useMutation(ADD_STUDENT, {
+        update(cache, { data: { addStudent } }) {
+            try {
+                // Read existing students from cache
+                const existingData = cache.readQuery({ query: GET_STUDENTS });
+
+                if (existingData) {
+                    // Write back with the new student added
+                    cache.writeQuery({
+                        query: GET_STUDENTS,
+                        data: {
+                            allStudents: [...existingData.allStudents, addStudent],
+                        },
+                    });
+                }
+            } catch (e) {
+                console.warn("Cache update skipped:", e);
+            }
+        },
+    });
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        if (!name || !email) return alert("Please enter name and email");
         addStudent({ variables: { name, email } });
+
+        // Clear form after adding
+        setName('');
+        setEmail('');
     };
 
     return (
@@ -43,7 +77,7 @@ function AddStudent() {
                 </button>
             </form>
             {data && <p>Added: {data.addStudent.name}</p>}
-            {error && <p>Error: {error.message}</p>}
+            {error && <p style={{ color: 'red' }}>Error: {error.message}</p>}
         </div>
     );
 }
