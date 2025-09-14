@@ -121,6 +121,12 @@ function BorrowBookForm({ studentId, onClose }) {
         } catch (err) {
             console.error("Borrow book failed:", err);
             alert("Failed to borrow book. Please try again.");
+            // ✅ Show friendly GraphQL error
+            const gqlErrorMessage =
+                err?.graphQLErrors?.[0]?.message ||
+                "Failed to borrow book. Please try again.";
+
+            alert(gqlErrorMessage);
         }
     };
 

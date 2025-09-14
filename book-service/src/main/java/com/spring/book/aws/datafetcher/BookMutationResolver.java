@@ -21,6 +21,7 @@ import com.spring.book.aws.model.Student;
 import com.spring.book.aws.repository.BookRepository;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 
 @DgsComponent
@@ -123,37 +124,46 @@ public class BookMutationResolver {
 	@Transactional
 	@DgsMutation
 	public Book borrowBook(@InputArgument String bookId, @InputArgument String studentId) {
-		Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("Book not found"));
+		try {
+			Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("Book not found"));
 
-		if (book.getAvailableCopies() <= 0) {
-			throw new RuntimeException("No available copies");
+			if (book.getAvailableCopies() <= 0) {
+				throw new RuntimeException("No available copies");
+			}
+			if (book.getBorrowedStudentIds() == null) {
+				book.setBorrowedStudentIds(new ArrayList<>());
+			}
+
+			if (book.getBorrowedStudentIds().contains(studentId)) {
+				throw new RuntimeException("Student has already borrowed this book");
+			}
+
+			book.getBorrowedStudentIds().add(studentId);
+			book.setAvailableCopies(book.getTotalCopies() - book.getBorrowedStudentIds().size());
+
+			return bookRepository.saveAndFlush(book);
+		} catch (OptimisticLockException e) {
+			throw new RuntimeException("⚠️ Book is being borrowed by another student right now. Please try again.", e);
 		}
-		if (book.getBorrowedStudentIds() == null) {
-			book.setBorrowedStudentIds(new ArrayList<>());
-		}
 
-		if (book.getBorrowedStudentIds().contains(studentId)) {
-			throw new RuntimeException("Student has already borrowed this book");
-		}
-
-		book.getBorrowedStudentIds().add(studentId);
-		book.setAvailableCopies(book.getTotalCopies() - book.getBorrowedStudentIds().size());
-
-		return bookRepository.save(book);
 	}
 
 	// --- Borrow / Return with Optimistic Locking ---
 	@Transactional
 	@DgsMutation
 	public Book returnBook(@InputArgument String bookId, @InputArgument String studentId) {
-		Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("Book not found"));
+		try {
+			Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("Book not found"));
 
-		if (book.getBorrowedStudentIds() == null || !book.getBorrowedStudentIds().contains(studentId)) {
-			throw new RuntimeException("Student has not borrowed this book");
+			if (book.getBorrowedStudentIds() == null || !book.getBorrowedStudentIds().contains(studentId)) {
+				throw new RuntimeException("Student has not borrowed this book");
+			}
+			book.getBorrowedStudentIds().remove(studentId);
+			book.setAvailableCopies(book.getTotalCopies() - book.getBorrowedStudentIds().size());
+			return bookRepository.saveAndFlush(book);
+		} catch (OptimisticLockException e) {
+			throw new RuntimeException("⚠️ Book is being updated by another student right now. Please try again.", e);
 		}
-		book.getBorrowedStudentIds().remove(studentId);
-		book.setAvailableCopies(book.getTotalCopies() - book.getBorrowedStudentIds().size());
-		return bookRepository.save(book);
 	}
 
 	/**
