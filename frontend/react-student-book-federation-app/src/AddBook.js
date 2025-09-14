@@ -9,6 +9,19 @@ const ADD_BOOK = gql`
       title
       author
       totalCopies
+      availableCopies
+    }
+  }
+`;
+
+// Query used in BookList
+const GET_BOOKS = gql`
+  query GetBooks {
+    allBooks {
+      id
+      title
+      author
+      availableCopies
     }
   }
 `;
@@ -17,11 +30,34 @@ function AddBook() {
     const [title, setTitle] = useState('');
     const [author, setAuthor] = useState('');
     const [totalCopies, setTotalCopies] = useState(1);
-    const [addBook, { data, loading, error }] = useMutation(ADD_BOOK);
+
+    const [addBook, { data, loading, error }] = useMutation(ADD_BOOK, {
+        update(cache, { data: { addBook } }) {
+            // Read the current books from the cache
+            const existingBooks = cache.readQuery({ query: GET_BOOKS });
+
+            // Write the new book list back to the cache
+            if (existingBooks) {
+                cache.writeQuery({
+                    query: GET_BOOKS,
+                    data: {
+                        allBooks: [...existingBooks.allBooks, addBook],
+                    },
+                });
+            }
+        },
+    });
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!title || !author || totalCopies < 1) return;
+
         addBook({ variables: { title, author, totalCopies } });
+
+        // Reset form
+        setTitle('');
+        setAuthor('');
+        setTotalCopies(1);
     };
 
     return (
@@ -51,7 +87,7 @@ function AddBook() {
                 </button>
             </form>
             {data && <p>Added: {data.addBook.title}</p>}
-            {error && <p>Error: {error.message}</p>}
+            {error && <p style={{ color: 'red' }}>Error: {error.message}</p>}
         </div>
     );
 }
