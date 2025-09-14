@@ -11,3 +11,7 @@
 node_modules/
 build/
 
+# React cache
+node_modules/.cache/
+
+
