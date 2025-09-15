@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -26,8 +27,10 @@ public class Book {
 	private String author;
 	private int totalCopies;
 	private int availableCopies;
-	@ElementCollection
+	@ElementCollection(fetch = FetchType.EAGER) // load immediately to avoid lazy init errors: force eager loading
 	private List<String> borrowedStudentIds = new ArrayList<>();
+
+	// 👇 This enables optimistic locking
 	@Version
 	private Long version; // Optimistic locking
 

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.netflix.graphql.dgs.DgsComponent;
@@ -130,8 +131,11 @@ public class BookMutationResolver {
 			if (book.getAvailableCopies() <= 0) {
 				throw new RuntimeException("No available copies");
 			}
+			// force initialize lazy collection
 			if (book.getBorrowedStudentIds() == null) {
 				book.setBorrowedStudentIds(new ArrayList<>());
+			} else {
+				book.getBorrowedStudentIds().size(); // touch collection inside transaction
 			}
 
 			if (book.getBorrowedStudentIds().contains(studentId)) {
@@ -142,7 +146,7 @@ public class BookMutationResolver {
 			book.setAvailableCopies(book.getTotalCopies() - book.getBorrowedStudentIds().size());
 
 			return bookRepository.saveAndFlush(book);
-		} catch (OptimisticLockException e) {
+		} catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
 			throw new RuntimeException("⚠️ Book is being borrowed by another student right now. Please try again.", e);
 		}
 
