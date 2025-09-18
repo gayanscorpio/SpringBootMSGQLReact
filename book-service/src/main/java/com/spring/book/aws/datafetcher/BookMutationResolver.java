@@ -19,13 +19,17 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import com.spring.book.aws.model.Book;
 import com.spring.book.aws.model.Student;
+import com.spring.book.aws.redis.BookRedisPublisher;
 import com.spring.book.aws.repository.BookRepository;
+import com.spring.book.aws.subcription.BookSubscriptionResolver;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 
 @DgsComponent
+@AllArgsConstructor
 public class BookMutationResolver {
 
 	@PostConstruct
@@ -34,10 +38,7 @@ public class BookMutationResolver {
 	}
 
 	private final BookRepository bookRepository;
-
-	public BookMutationResolver(BookRepository bookRepository) {
-		this.bookRepository = bookRepository;
-	}
+	private final BookRedisPublisher redisPublisher;
 
 	@DgsMutation
 	@PreAuthorize("hasRole('Admin')") // Only Admins can add books
@@ -49,7 +50,12 @@ public class BookMutationResolver {
 		book.setTotalCopies(totalCopies);
 		book.setAvailableCopies(totalCopies);
 		book.setBorrowedStudentIds(new ArrayList<>());
-		return bookRepository.save(book);
+		Book saved = bookRepository.save(book);
+
+		// 🔔 Publish to Redis so all instances broadcast
+		// Publishes event to Redis using BookRedisPublisher.
+		redisPublisher.publish(saved);
+		return saved;
 	}
 
 	@DgsMutation

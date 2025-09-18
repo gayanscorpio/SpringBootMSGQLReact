@@ -40,6 +40,10 @@ extend type Student @key(fields: "id") {
   borrowedBooks: [Book!]!  #borrowedBooks → resolved in Book service.
 }
 
+type Subscription {
+  bookAdded: Book
+}
+
 
 
 
