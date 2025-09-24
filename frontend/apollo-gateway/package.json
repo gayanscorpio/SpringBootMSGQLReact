@@ -1,6 +1,7 @@
 {
   "name": "apollo-gateway",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,7 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/gateway": "^2.11.2",
-    "apollo-server": "^3.13.0",
+    "@apollo/server": "^4.12.2",
     "graphql": "^16.11.0"
   }
 }

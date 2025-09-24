@@ -6,9 +6,10 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import com.spring.book.aws.model.Book;
 
 /**
  * Redis Server → Broadcasts event to all subscribers.
@@ -17,36 +18,37 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
 	@Bean
-	public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
-		RedisTemplate<String, Object> template = new RedisTemplate<>();
+	public RedisTemplate<String, Book> redisTemplate(RedisConnectionFactory factory) {
+		RedisTemplate<String, Book> template = new RedisTemplate<>();
 		template.setConnectionFactory(factory);
 
 		// Key serializer
 		template.setKeySerializer(new StringRedisSerializer());
 
+		// Value serializer: serialize/deserialize Book directly
+		Jackson2JsonRedisSerializer<Book> serializer = new Jackson2JsonRedisSerializer<>(Book.class);
+
 		// Value serializer
-		template.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
+		template.setValueSerializer(serializer);
 
 		return template;
 	}
 
 	@Bean
 	public ChannelTopic topic() {
-		return new ChannelTopic("book-events");
+		return new ChannelTopic("BOOK_ADDED");
 	}
 
 	@Bean
 	public RedisMessageListenerContainer redisContainer(RedisConnectionFactory connectionFactory,
-			MessageListenerAdapter listenerAdapter, ChannelTopic topic) {
+			BookRedisSubscriber subscriber, // inject the subscriber directly
+			ChannelTopic topic) {
 		RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
-		container.addMessageListener(listenerAdapter, topic);
+
+		// Add the subscriber directly
+		container.addMessageListener(subscriber, topic);
 		return container;
 	}
 
-	@Bean
-	public MessageListenerAdapter listenerAdapter(BookRedisSubscriber subscriber) {
-		// "onMessage" must match the method name in BookRedisSubscriber
-		return new MessageListenerAdapter(subscriber, "onMessage");
-	}
 }

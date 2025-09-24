@@ -1,0 +1,25 @@
+{
+  "name": "subscription-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/server": "^5.0.0",
+    "@graphql-tools/schema": "^10.0.25",
+    "graphql": "^16.11.0",
+    "graphql-redis-subscriptions": "^2.7.0",
+    "graphql-subscriptions": "^3.0.0",
+    "graphql-tag": "^2.12.6",
+    "graphql-ws": "^5.16.2",
+    "ioredis": "^5.7.0",
+    "redis": "^5.8.2",
+    "ws": "^8.18.3"
+  }
+}

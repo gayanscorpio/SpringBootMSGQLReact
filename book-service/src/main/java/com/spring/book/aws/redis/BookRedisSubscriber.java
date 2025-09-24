@@ -1,6 +1,12 @@
 package com.spring.book.aws.redis;
 
+import java.nio.charset.StandardCharsets;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.MessageListener;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,10 +18,11 @@ import com.spring.book.aws.subcription.BookSubscriptionResolver;
  * pushes to sink.
  */
 @Component
-public class BookRedisSubscriber {
+public class BookRedisSubscriber implements MessageListener {
+
+	private static final Logger logger = LoggerFactory.getLogger(BookRedisSubscriber.class);
 
 	private final BookSubscriptionResolver bookSubscriptionResolver;
-	private final ObjectMapper mapper = new ObjectMapper();
 
 	// Constructor
 	public BookRedisSubscriber(BookSubscriptionResolver bookSubscriptionResolver) {
@@ -23,16 +30,20 @@ public class BookRedisSubscriber {
 	}
 
 	// ✅ Must be public and have exactly these parameters
-	public void onMessage(String message) {
-		System.out.println(" xxxxxxxxxxxxxxxxxxxx  - onMessage :" + message);
+	@Override
+	public void onMessage(Message message, byte[] pattern) {
 		try {
-			Book book = mapper.readValue(message, Book.class);
 
-			// Redis message is converted back into a Book object and passed into the
-			// GraphQL subscription sink.
+			// Deserialize using Jackson2JsonRedisSerializer
+			Jackson2JsonRedisSerializer<Book> serializer = new Jackson2JsonRedisSerializer<>(Book.class);
+			Book book = serializer.deserialize(message.getBody());
+
+			logger.info("📢 Parsed Book object: id={}, title={}", book.getId(), book.getTitle());
 			bookSubscriptionResolver.publishBookAdded(book);
+
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("❌ Failed to parse Redis message into Book object", e);
 		}
 	}
+
 }

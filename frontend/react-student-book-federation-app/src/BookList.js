@@ -1,7 +1,8 @@
 // src/BookList.js
-import React from 'react';
-import { gql, useQuery } from '@apollo/client'; //apollo client 
+import React, { useEffect } from 'react';
+import { gql, useQuery } from '@apollo/client';
 
+// Query to fetch all books
 const GET_BOOKS = gql`
   query GetBooks {
     allBooks {
@@ -13,10 +14,60 @@ const GET_BOOKS = gql`
   }
 `;
 
-function BookList() {
-    const { loading, error, data } = useQuery(GET_BOOKS);
+// Subscription for newly added books
+const BOOK_ADDED = gql`
+  subscription {
+    bookAdded {
+      id
+      title
+      author
+      availableCopies
+    }
+  }
+`;
 
-    if (loading) return <p>Loading...</p>;
+function BookList() {
+    const { data, loading, error, subscribeToMore } = useQuery(GET_BOOKS);
+
+    useEffect(() => {
+        console.log("[BookList] Setting up subscription...");
+        // Subscribe to new books
+        const unsubscribe = subscribeToMore({
+            document: BOOK_ADDED,
+            onError: (err) => console.error("[BookList] Subscription error:", err),
+
+            updateQuery: (prev, { subscriptionData }) => {
+                console.log("[BookList] Raw subscriptionData:", subscriptionData);
+                const newBook = subscriptionData?.data?.bookAdded;
+
+                if (!newBook) {
+                    console.warn("[BookList] Subscription payload is empty, ignoring.");
+                    return prev;
+                }
+
+                // Log the full object for debugging
+                console.log("[BookList] 📢 Received new book from subscription:\n", JSON.stringify(newBook, null, 2));
+
+                // Prevent duplicates
+                if (prev.allBooks.some((b) => b.id === newBook.id)) {
+                    return prev;
+                }
+
+                // Return updated list
+                return {
+                    ...prev,
+                    allBooks: [newBook, ...prev.allBooks],
+                };
+            },
+        });
+
+        return () => {
+            console.log("[BookList] Unsubscribing from BOOK_ADDED...");
+            unsubscribe();
+        };
+    }, [subscribeToMore]);
+
+    if (loading) return <p>Loading books…</p>;
     if (error) return <p>Error: {error.message}</p>;
 
     return (
@@ -31,7 +82,7 @@ function BookList() {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.allBooks.map(book => (
+                    {data?.allBooks?.map((book) => (
                         <tr key={book.id}>
                             <td>{book.title}</td>
                             <td>{book.author}</td>

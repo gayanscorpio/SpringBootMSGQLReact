@@ -1,0 +1,87 @@
+import { ApolloServer } from '@apollo/server';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import { useServer } from 'graphql-ws/use/ws';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
+
+// --------------------
+// Redis PubSub Setup
+// --------------------
+const pubsub = new RedisPubSub({
+  connection: { host: '127.0.0.1', port: 6379 },
+});
+const BOOK_ADDED = 'BOOK_ADDED';
+
+// --------------------
+// GraphQL Schema
+// --------------------
+const typeDefs = `
+  type Book {
+    id: ID!
+    title: String!
+    author: String!
+    totalCopies: Int!
+    availableCopies: Int!
+  }
+
+  type Subscription {
+    bookAdded: Book
+  }
+
+  type Query {
+    _dummy: Boolean
+  }
+`;
+
+// --------------------
+// Resolvers
+// --------------------
+const resolvers = {
+  Subscription: {
+    bookAdded: {
+      subscribe: () => {
+        const asyncIterator = pubsub.asyncIterator([BOOK_ADDED]);
+
+        // Optional: log every book delivered
+        const originalNext = asyncIterator.next.bind(asyncIterator);
+        asyncIterator.next = async () => {
+          const result = await originalNext();
+          if (result?.value?.bookAdded) {
+            console.log('📢 Delivering book to subscribers:', result.value.bookAdded);
+          }
+          return result;
+        };
+
+        return asyncIterator;
+      },
+    },
+  },
+};
+
+// --------------------
+// Apollo Server Setup
+// --------------------
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+const server = new ApolloServer({ schema });
+await server.start();
+
+// --------------------
+// WebSocket Server for Subscriptions
+// --------------------
+const httpServer = createServer();
+const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' });
+
+useServer(
+  {
+    schema,
+    onConnect: (ctx) => console.log('Client connected with params:', ctx.connectionParams),
+    onDisconnect: (ctx, code, reason) => console.log(`Client disconnected: code=${code}, reason=${reason}`),
+  },
+  wsServer
+);
+
+// --------------------
+// Start HTTP Server
+// --------------------
+httpServer.listen(5001, () => console.log('🚀 Subscription server running at ws://localhost:5001/graphql'));
