@@ -1,5 +1,5 @@
 // src/ApolloClient.js
-import { ApolloClient, InMemoryCache, createHttpLink, split } from '@apollo/client';
+import { ApolloClient, InMemoryCache, createHttpLink, split, gql } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
@@ -12,13 +12,11 @@ const httpLink = createHttpLink({
 
 // Middleware to add Authorization header
 const authLink = setContext((_, { headers }) => {
-    // Get token from localStorage (set after login)
     const token = localStorage.getItem('token');
-
     return {
         headers: {
             ...headers,
-            authorization: token ? `Bearer ${token}` : '', // send token if exists
+            authorization: token ? `Bearer ${token}` : '',
         },
     };
 });
@@ -33,14 +31,14 @@ const wsLink = new GraphQLWsLink(
                 authorization: token ? `Bearer ${token}` : '',
             };
         },
-        lazy: false, // makes sure the client connects immediately and stays connected
-        reconnect: true,  // automatically reconnect if disconnected
-        onConnect: (ctx) => console.log("WS Client connected:", ctx.connectionParams)
-
+        lazy: false,
+        reconnect: true,
+        onConnect: (ctx) =>
+            console.log('WS Client connected:', ctx.connectionParams),
     })
 );
 
-// Split link: Queries/Mutations use HTTP, Subscriptions use WS
+// Split link: Queries/Mutations → HTTP, Subscriptions → WS
 const splitLink = split(
     ({ query }) => {
         const definition = getMainDefinition(query);
@@ -53,26 +51,42 @@ const splitLink = split(
     authLink.concat(httpLink)
 );
 
-// Create Apollo Client with custom cache policies
+// Apollo Client with typePolicies
 const client = new ApolloClient({
-    link: splitLink, // chain auth link and http link, and ws link
+    link: splitLink,
     cache: new InMemoryCache({
         typePolicies: {
-            Student: {
-                keyFields: ['id'], // normalize by ID
-            },
-            Book: {
-                keyFields: ['id'], // normalize by ID
+            Query: {
                 fields: {
-                    borrowedBy: {
-                        // Merge function tells Apollo how to safely replace borrowedBy
-                        merge(existing, incoming) {
-                            return incoming; // Accept new value even if null
+                    allBooks: {
+                        keyArgs: false, // treat allBooks as one list
+                        merge(existing = [], incoming, { readField }) {
+                            const merged = [...existing];
+                            for (const book of incoming) {
+                                const id = readField('id', book);
+                                if (!merged.some((b) => readField('id', b) === id)) {
+                                    merged.push(book);
+                                }
+                            }
+                            return merged;
                         },
                     },
                 },
             },
-        }
+            Student: {
+                keyFields: ['id'],
+            },
+            Book: {
+                keyFields: ['id'],
+                fields: {
+                    borrowedBy: {
+                        merge(_, incoming) {
+                            return incoming; // always accept new value
+                        },
+                    },
+                },
+            },
+        },
     }),
 });
 

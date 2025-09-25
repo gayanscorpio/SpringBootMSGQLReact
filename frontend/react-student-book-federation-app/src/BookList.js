@@ -30,39 +30,30 @@ function BookList() {
     const { data, loading, error, subscribeToMore } = useQuery(GET_BOOKS);
 
     useEffect(() => {
-        console.log("[BookList] Setting up subscription...");
-        // Subscribe to new books
+        console.log('[BookList] Setting up subscription...');
+
         const unsubscribe = subscribeToMore({
             document: BOOK_ADDED,
-            onError: (err) => console.error("[BookList] Subscription error:", err),
-
+            onError: (err) => console.error('[BookList] Subscription error:', err),
             updateQuery: (prev, { subscriptionData }) => {
-                console.log("[BookList] Raw subscriptionData:", subscriptionData);
                 const newBook = subscriptionData?.data?.bookAdded;
-
                 if (!newBook) {
-                    console.warn("[BookList] Subscription payload is empty, ignoring.");
+                    console.warn('[BookList] Subscription payload is empty, ignoring.');
                     return prev;
                 }
 
-                // Log the full object for debugging
-                console.log("[BookList] 📢 Received new book from subscription:\n", JSON.stringify(newBook, null, 2));
+                console.log('[BookList] 📢 New book from subscription:', newBook);
 
-                // Prevent duplicates
-                if (prev.allBooks.some((b) => b.id === newBook.id)) {
-                    return prev;
-                }
-
-                // Return updated list
+                // Append → Apollo's merge policy deduplicates
                 return {
                     ...prev,
-                    allBooks: [newBook, ...prev.allBooks],
+                    allBooks: [...prev.allBooks, newBook],
                 };
             },
         });
 
         return () => {
-            console.log("[BookList] Unsubscribing from BOOK_ADDED...");
+            console.log('[BookList] Unsubscribing from BOOK_ADDED...');
             unsubscribe();
         };
     }, [subscribeToMore]);
