@@ -1,6 +1,7 @@
 package com.spring.auth.aws.model;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,6 +27,17 @@ public class AppUser {
 
 	@Column(nullable = false)
 	private String role;
+
+	@Column(nullable = false)
+	private String phone;
+
+	private boolean phoneVerified = false;
+
+	@Column(nullable = false)
+	private String otpCode; // temporary OTP
+
+	@Column(name = "otp_expiry")
+	private LocalDateTime otpExpiry;
 
 	@Column(name = "last_updated")
 	private Instant lastUpdated = Instant.now();

@@ -7,6 +7,11 @@ type Mutation {
   login(username: String!, password: String!): AuthResponse
 }
 
+extend type Mutation {
+  registerWithPhone(username: String!, password: String!, phone: String!): Boolean
+  verifyPhone(username: String!, code: String!): AuthResponse
+}
+
 type AuthResponse {
   token: String!
   userId: ID!
