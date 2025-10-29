@@ -8,7 +8,7 @@ type Mutation {
 }
 
 extend type Mutation {
-  registerWithPhone(username: String!, password: String!, phone: String!): Boolean
+  registerWithPhone(username: String!, password: String!, phone: String!, role: String): Boolean
   verifyPhone(username: String!, code: String!): AuthResponse
 }
 

@@ -66,7 +66,8 @@ public class AuthMutationResolver {
 	 * @return
 	 */
 	@MutationMapping
-	public boolean registerWithPhone(@Argument String username, @Argument String password, @Argument String phone) {
+	public boolean registerWithPhone(@Argument String username, @Argument String password, @Argument String phone,
+			@Argument String role) {
 		if (userRepo.findByUsername(username).isPresent()) {
 			throw new RuntimeException("Username already exists");
 		}
@@ -75,7 +76,8 @@ public class AuthMutationResolver {
 		user.setUsername(username);
 		user.setPassword(encoder.encode(password));
 		user.setPhone(phone);
-		user.setRole("USER");
+		// ✅ Default role if not provided
+		user.setRole(role != null && !role.isBlank() ? role.toUpperCase() : "USER");
 
 		// Generate OTP
 		String otp = String.format("%06d", new Random().nextInt(999999));
