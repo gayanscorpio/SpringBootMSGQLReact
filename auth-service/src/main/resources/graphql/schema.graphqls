@@ -12,8 +12,20 @@ extend type Mutation {
   verifyPhone(username: String!, code: String!): AuthResponse
 }
 
+extend type Mutation {
+  registerWithDob(
+    username: String!
+    password: String!
+    phone: String
+    role: String
+    dob: String! # ISO date format (YYYY-MM-DD)
+  ): Boolean
+}
+
+
 type AuthResponse {
   token: String!
   userId: ID!
   role: String!
+  age: Int
 }

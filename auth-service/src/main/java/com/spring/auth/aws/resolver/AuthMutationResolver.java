@@ -1,6 +1,8 @@
 package com.spring.auth.aws.resolver;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +56,7 @@ public class AuthMutationResolver {
 		}
 
 		String token = jwtUtil.generateToken(user);
-		return new AuthResponse(token, user.getId(), user.getRole());
+		return new AuthResponse(token, user.getId(), user.getRole(), user.getAge());
 	}
 
 	/**
@@ -119,6 +121,45 @@ public class AuthMutationResolver {
 		String token = jwtUtil.generateToken(user);
 
 		// ✅ Return full AuthResponse structure
-		return new AuthResponse(token, user.getId(), user.getRole());
+		return new AuthResponse(token, user.getId(), user.getRole(), null);
 	}
+
+	@MutationMapping
+	public boolean registerWithDob(@Argument String username, @Argument String password, @Argument String phone,
+			@Argument String role, @Argument String dob) {
+
+		if (userRepo.findByUsername(username).isPresent()) {
+			throw new RuntimeException("Username already exists");
+		}
+
+		LocalDate birthDate = LocalDate.parse(dob);
+		int age = Period.between(birthDate, LocalDate.now()).getYears();
+
+		AppUser user = new AppUser();
+		user.setUsername(username);
+		user.setPassword(encoder.encode(password));
+		user.setPhone(phone);
+		user.setRole(role);
+		user.setDob(LocalDate.parse(dob));
+
+		// ✅ Generate OTP
+		String otp = String.format("%06d", new Random().nextInt(999999));
+		user.setOtpCode(otp);
+		user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+		user.setPhoneVerified(false);
+		user.setAge(age);
+
+		// Optionally reject underage registration
+		if (age < 13) {
+			throw new RuntimeException("You must be 13 or older to register.");
+		}
+
+		// For now, print OTP in console (until you integrate Twilio/SMS)
+		System.out.println("📲 OTP for " + phone + ": " + otp);
+		System.out.println("✅ User registered: " + username + " (Age: " + age + ")");
+
+		userRepo.save(user);
+		return true;
+	}
+
 }
