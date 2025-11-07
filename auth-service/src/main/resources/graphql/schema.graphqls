@@ -28,4 +28,5 @@ type AuthResponse {
   userId: ID!
   role: String!
   age: Int
+  isAdult: Boolean
 }

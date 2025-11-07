@@ -13,4 +13,5 @@ public class AuthResponse {
 	private Long userId;
 	private String role;
 	private Integer age;
+	private Boolean isAdult;
 }

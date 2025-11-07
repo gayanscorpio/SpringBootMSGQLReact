@@ -40,6 +40,8 @@ public class AuthMutationResolver {
 		user.setUsername(username);
 		user.setPassword(encoder.encode(password));
 		user.setRole(role != null ? role : "User");
+		user.setOtpCode("000000");
+		user.setPhone("076 000 0000");
 		userRepo.save(user);
 
 		System.out.println("<<<<<<<<<<<<<<<< user registered successfully <<<<<<<<<<<<");
@@ -56,7 +58,9 @@ public class AuthMutationResolver {
 		}
 
 		String token = jwtUtil.generateToken(user);
-		return new AuthResponse(token, user.getId(), user.getRole(), user.getAge());
+		Integer age = user.getAge();
+		Boolean isAdult = (age != null && age >= 18);
+		return new AuthResponse(token, user.getId(), user.getRole(), user.getAge(), isAdult);
 	}
 
 	/**
@@ -120,8 +124,11 @@ public class AuthMutationResolver {
 		// ✅ Issue a real JWT token (same as login)
 		String token = jwtUtil.generateToken(user);
 
+		Integer age = user.getAge();
+		Boolean isAdult = (age != null && age >= 18);
+
 		// ✅ Return full AuthResponse structure
-		return new AuthResponse(token, user.getId(), user.getRole(), null);
+		return new AuthResponse(token, user.getId(), user.getRole(), age, isAdult);
 	}
 
 	@MutationMapping
