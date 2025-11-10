@@ -6,20 +6,20 @@ import java.time.Period;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.MutationMapping;
-import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 
+import com.netflix.graphql.dgs.DgsComponent;
+import com.netflix.graphql.dgs.DgsMutation;
+import com.netflix.graphql.dgs.DgsQuery;
+import com.netflix.graphql.dgs.InputArgument;
 import com.spring.auth.aws.model.AppUser;
-import com.spring.auth.aws.model.AuthResponse;
 import com.spring.auth.aws.repository.UserRepository;
 import com.spring.auth.aws.util.JwtUtil;
 
-@Controller
+@DgsComponent
 public class AuthMutationResolver {
 
 	@Autowired
@@ -28,8 +28,9 @@ public class AuthMutationResolver {
 	private JwtUtil jwtUtil;
 	private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
-	@MutationMapping
-	public Boolean register(@Argument String username, @Argument String password, @Argument String role) {
+	@DgsMutation
+	public Boolean register(@InputArgument String username, @InputArgument String password,
+			@InputArgument String role) {
 
 		System.out.println("<<<<<<<<<<<<<<<< user register calling ... <<<<<<<<<<<<");
 		if (userRepo.findByUsername(username).isPresent()) {
@@ -49,8 +50,8 @@ public class AuthMutationResolver {
 		return true;
 	}
 
-	@MutationMapping
-	public AuthResponse login(@Argument String username, @Argument String password) {
+	@DgsMutation
+	public AuthResponse login(@InputArgument String username, @InputArgument String password) {
 		AppUser user = userRepo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
 
 		if (!encoder.matches(password, user.getPassword())) {
@@ -64,6 +65,16 @@ public class AuthMutationResolver {
 	}
 
 	/**
+	 * A record is a special type in Java that is meant to be a data carrier —
+	 * basically a class that only contains fields (data) and automatically
+	 * generates:private final fields
+	 * 
+	 * Constructor Getters (token(), userId(), etc.) equals(), hashCode() toString()
+	 */
+	public record AuthResponse(String token, Long userId, String role, Integer age, Boolean isAdult) {
+	}
+
+	/**
 	 * 🔹 New: Register with Phone (requires OTP)
 	 * 
 	 * @param username
@@ -71,9 +82,9 @@ public class AuthMutationResolver {
 	 * @param phone
 	 * @return
 	 */
-	@MutationMapping
-	public boolean registerWithPhone(@Argument String username, @Argument String password, @Argument String phone,
-			@Argument String role) {
+	@DgsMutation
+	public boolean registerWithPhone(@InputArgument String username, @InputArgument String password,
+			@InputArgument String phone, @InputArgument String role) {
 		if (userRepo.findByUsername(username).isPresent()) {
 			throw new RuntimeException("Username already exists");
 		}
@@ -104,8 +115,8 @@ public class AuthMutationResolver {
 	 * @param code
 	 * @return
 	 */
-	@MutationMapping
-	public AuthResponse verifyPhone(@Argument String username, @Argument String code) {
+	@DgsMutation
+	public AuthResponse verifyPhone(@InputArgument String username, @InputArgument String code) {
 		AppUser user = userRepo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
 
 		if (user.getOtpCode() == null || user.getOtpExpiry().isBefore(LocalDateTime.now())) {
@@ -131,9 +142,9 @@ public class AuthMutationResolver {
 		return new AuthResponse(token, user.getId(), user.getRole(), age, isAdult);
 	}
 
-	@MutationMapping
-	public boolean registerWithDob(@Argument String username, @Argument String password, @Argument String phone,
-			@Argument String role, @Argument String dob) {
+	@DgsMutation
+	public boolean registerWithDob(@InputArgument String username, @InputArgument String password,
+			@InputArgument String phone, @InputArgument String role, @InputArgument String dob) {
 
 		if (userRepo.findByUsername(username).isPresent()) {
 			throw new RuntimeException("Username already exists");

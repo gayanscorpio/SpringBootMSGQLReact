@@ -1,5 +1,6 @@
 type Query {
   ping: String
+  appUser(id: ID!): AppUser
 }
 
 type Mutation {
@@ -26,6 +27,14 @@ extend type Mutation {
 type AuthResponse {
   token: String!
   userId: ID!
+  role: String!
+  age: Int
+  isAdult: Boolean
+}
+
+type AppUser @key(fields: "id") { #@key(fields: "id") → allows other federated services to reference User.
+  id: ID!
+  username: String!
   role: String!
   age: Int
   isAdult: Boolean
