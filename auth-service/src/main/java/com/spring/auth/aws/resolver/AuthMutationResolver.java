@@ -28,6 +28,16 @@ public class AuthMutationResolver {
 	private JwtUtil jwtUtil;
 	private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
+	/**
+	 * A record is a special type in Java that is meant to be a data carrier —
+	 * basically a class that only contains fields (data) and automatically
+	 * generates:private final fields
+	 * 
+	 * Constructor Getters (token(), userId(), etc.) equals(), hashCode() toString()
+	 */
+	public record AuthResponse(String token, Long userId, String role, Integer age, Boolean isAdult) {
+	}
+
 	@DgsMutation
 	public Boolean register(@InputArgument String username, @InputArgument String password,
 			@InputArgument String role) {
@@ -62,16 +72,6 @@ public class AuthMutationResolver {
 		Integer age = user.getAge();
 		Boolean isAdult = (age != null && age >= 18);
 		return new AuthResponse(token, user.getId(), user.getRole(), user.getAge(), isAdult);
-	}
-
-	/**
-	 * A record is a special type in Java that is meant to be a data carrier —
-	 * basically a class that only contains fields (data) and automatically
-	 * generates:private final fields
-	 * 
-	 * Constructor Getters (token(), userId(), etc.) equals(), hashCode() toString()
-	 */
-	public record AuthResponse(String token, Long userId, String role, Integer age, Boolean isAdult) {
 	}
 
 	/**
