@@ -1,6 +1,7 @@
 type Query {
   ping: String
   appUser(id: ID!): AppUser
+  checkUserPin(userId: String!): PinResponse
 }
 
 type Mutation {
@@ -23,6 +24,26 @@ extend type Mutation {
   ): Boolean
 }
 
+extend type Mutation {
+  setUserPin(input: SetPinInput!): PinResponse
+  verifyUserPin(input: VerifyPinInput!): PinResponse
+}
+
+input SetPinInput {
+  userId: ID!
+  pin: String!
+}
+
+input VerifyPinInput {
+  userId: ID!
+  pin: String!
+}
+
+type PinResponse {
+  success: Boolean!
+  message: String
+}
+
 
 type AuthResponse {
   token: String!
@@ -39,3 +60,4 @@ type AppUser @key(fields: "id") { #@key(fields: "id") → allows other federated
   age: Int
   isAdult: Boolean
 }
+
